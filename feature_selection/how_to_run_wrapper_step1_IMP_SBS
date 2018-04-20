@@ -1,0 +1,37 @@
+########	use SBS algorithm after IMP algorithm
+path0=/home/hulong/module/feature_selection/bin
+path1=/home/hulong/module/feature_selection/input
+path2=/home/hulong/module/feature_selection/output
+path3=/home/hulong/module/feature_selection/tmp
+cd $path3/IMP_SBS;
+mkdir  delete 
+cd $path3/IMP_SBS/delete;
+mkdir qsub log perf feat summary
+### get the initial feature; 
+awk 'BEGIN{FS=".";OFS="\t"}{print $1,$0}'	$path2/example.selected.FS.IMP	|	awk 'BEGIN{OFS="\t";foo="";count=0;}{if($1!=foo){count=count+1;foo=$1}print $2}'	>	$path3/IMP_SBS/delete/feat/baseF.0;
+awk 'BEGIN{FS=".";OFS="\t"}{print $1,$0}'	$path2/example.selected.FS.IMP	|	awk 'BEGIN{OFS="\t";foo="";count=0;}{if($1!=foo){count=count+1;foo=$1}print $2,count}'	>	$path3/IMP_SBS/delete/feat/delF.0;
+### get performance
+ echo "inputF1=\"$path1/example.train.mx\";
+ inputF2=\"$path3/idx/cv.idx\";
+ inputF3=\"5\";
+ inputF4=\"$path3/IMP_SBS/delete/feat/baseF.0\";
+ inputF5=\"$path3/IMP_SBS/delete/feat/delF.0\";" > $path3/IMP_SBS/delete/haha
+ cat $path3/IMP_SBS/delete/haha	$path0/Delete_SBS_combine.R	>	$path3/IMP_SBS/delete/haha.R;
+ rm -e -f $path3/IMP_SBS/delete/haha
+ R CMD BATCH $path3/IMP_SBS/delete/haha.R
+
+
+########        summary features, best performance as turnover point.
+ egrep "\[1\] \"base feature set's performance is: |\[1\] \"find the bad feature: |\[1\] \"the best performance is now: " $path3/IMP_SBS/delete/haha.Rout | cut -d ':' -f 2 |sed 's/"//g; s/^ //g;s/  / /g' > $path3/IMP_SBS/delete/foo1
+ grep -i "\[1\] \"now the good features are: " $path3/IMP_SBS/delete/haha.Rout | tail -1 | cut -d ':' -f 2 |sed 's/"//g ; s/^  //g; s/  / /g' >       $path3/IMP_SBS/delete/foo2
+ cat $path3/IMP_SBS/delete/foo1  $path3/IMP_SBS/delete/foo2       >       $path3/IMP_SBS/delete/foo3;
+ awk '{if(NR%2==1){performance=$0;}else{feature=$0;print NR/2"\t"performance"\t"feature}}'      $path3/IMP_SBS/delete/foo3       >       $path3/IMP_SBS/delete/foo4
+ BP=`sort -k2,2gr -k1,1gr       $path3/IMP_SBS/delete/foo4  |head -1        |cut -f 2`;
+ BP_NR=`sort -k2,2gr -k1,1gr    $path3/IMP_SBS/delete/foo4  |head -1        |cut -f 1`;
+ nvar=`awk -v BP_NR="$BP_NR" -v BP="$BP" '((NR>=BP_NR)&&($2>=BP)){print $1}' $path3/IMP_SBS/delete/foo4       |tail -n 1`
+ echo $nvar;
+ awk -v nvar="$nvar" 'BEGIN{FS="\t"} NR>=nvar {print $3}' $path3/IMP_SBS/delete/foo4        |sed 's/ /\n/g' >>      $path2/example.selected.FS.IMP_SBS
+ rm -e -f $path3/IMP_SBS/delete/foo*
+
+
+

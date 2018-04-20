@@ -1,0 +1,23 @@
+########	this is a readme about the input files 
+
+####	K-means;
+
+#	Two files are needed:
+
+#	1.	input.example.mx
+#		It is a matrix file. Each row is a sample and each column is a feature. The first row is a header, recording each feature names;
+#		For example:
+#		X1	X2	X3	X4	X5		#this is the header, not numeric, indicating each feature's name
+#		x1,1	x1,2	x1,3	x1,4	x1,5		#this is the first sample, a vector with 5 features
+#		x2,1	x2,2	x2,3	x2,4	x2,5		#this is the second sample, a vector with 5 features
+
+#	2.	input.example.FS
+#		It is a feature name file. Each row is a feature name; These features in the matrix file would be in used when clustering
+#		For example:
+#		X1
+#		X3
+#		X4
+#		In this case, only X1, X3 and X4 would be used to perform the clustering. namely, only the following part of the original matrix is used in clustering:
+#		X1	X3	X4
+#		x1,1	x1,3	x1,4
+#		x2,1	x2,3	x2,4

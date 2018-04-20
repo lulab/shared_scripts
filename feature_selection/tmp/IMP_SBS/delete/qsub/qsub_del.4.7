@@ -1,0 +1,6 @@
+#$ -S /bin/bash
+#$ -cwd
+#$ -j y
+#$ -q q1.* 
+#$ -N SBS_c
+Rscript /home/hulong/module/feature_selection/bin/cv.test.R /home/hulong/module/feature_selection/input/example.train.mx /home/hulong/module/feature_selection/tmp/idx/cv.idx 5 ./feat/baseF.4.7 ./perf/perf_del.4.7

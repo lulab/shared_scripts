@@ -1,0 +1,14 @@
+########	Preparation for feature selection by wrapper method, using Random Forest algorithm as classifier.
+path0=/home/hulong/module/feature_selection/bin
+path1=/home/hulong/module/feature_selection/input
+path2=/home/hulong/module/feature_selection/output
+path3=/home/hulong/module/feature_selection/tmp
+cd $path3;mkdir idx IMP IMP_SBS
+
+####	generate the sample index for cross-validation
+########        idx
+cd $path3/idx
+cut -f 2 $path1/example.train.mx > $path3/foo;
+Rscript $path0/cv.idx.R	$path3/foo	5	$path3/idx/cv.idx;
+rm -e -f $path3/foo;
+

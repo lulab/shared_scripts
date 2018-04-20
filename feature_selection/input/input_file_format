@@ -1,0 +1,22 @@
+########	this is a readme about the input files 
+
+#	Two files are needed for machine-learning:
+
+#	1.	example.train.mx
+#		It is a matrix file. Each row is a sample and each column is a feature. The first row is a header, recording each feature names; the first column is a unique sample ID, here we used bin; the second column is the label, here we used anno
+#		For example:
+#		bin	anno	X1	X2	X3	X4	X5		#this is the header, not numeric, indicating each feature's name
+#		bin1	CDS	x1,1	x1,2	x1,3	x1,4	x1,5		#this is the first sample, a vector with 5 features , a unique ID (bin1) and a label (CDS)
+#		bin2	NC1	x2,1	x2,2	x2,3	x2,4	x2,5		#this is the second sample, a vector with 5 features , a unique ID (bin2) and a label (NC1)
+
+#	2.	example.initial.FS
+#		It is a feature name file. Each row is a feature name; These features (and the sample ID and label columns ) in the matrix file would be in used during training and testing and prediction
+#		For example:
+#		X1
+#		X3
+#		X4
+#		In this case, only X1, X3 and X4 would be used to perform the machine-learning. Namely, only the following part of the original matrix is used in machine-learning:
+#		bin	anno	X1	X3	X4
+#		bin1	CDS	x1,1	x1,3	x1,4
+#		bin2	NC1	x2,1	x2,3	x2,4
+

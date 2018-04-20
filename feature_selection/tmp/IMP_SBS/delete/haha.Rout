@@ -1,0 +1,273 @@
+
+R version 2.13.1 (2011-07-08)
+Copyright (C) 2011 The R Foundation for Statistical Computing
+ISBN 3-900051-07-0
+Platform: x86_64-redhat-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> inputF1="/home/hulong/module/feature_selection/input/example.train.mx";
+>  inputF2="/home/hulong/module/feature_selection/tmp/idx/cv.idx";
+>  inputF3="5";
+>  inputF4="/home/hulong/module/feature_selection/tmp/IMP_SBS/delete/feat/baseF.0";
+>  inputF5="/home/hulong/module/feature_selection/tmp/IMP_SBS/delete/feat/delF.0";
+> #Args <-commandArgs(TRUE);
+> #inputF1= Args[1];#input example.train.mx ; first column is bin second is label, seperated by tab, with header;
+> #inputF2= Args[2];#input the cv.idx, no header;
+> #inputF3= Args[3];#input CV fold;
+> #inputF4= Args[4];#the base feature file; no header;one column; contains only features name
+> #inputF5= Args[5];#the deleting feature file; no header;tow columns; first is feature names; second is the rank. features with the same rank will be delete together
+> 
+> 
+> delta=-0.01;
+> my_qsub<-function(inputF1,inputF2,inputF3,inputF4,outputF,qsubF,logF){
++ str=paste("#$ -S /bin/bash\n#$ -cwd\n#$ -j y\n#$ -q q1.* \n#$ -N SBS_c\nRscript","/home/hulong/module/feature_selection/bin/cv.test.R",inputF1,inputF2,inputF3,inputF4,outputF)
++ write(str,file=qsubF);
++ system(paste("rm",outputF));
++ system(paste("rm",logF));
++ system(paste("qsub -V -o",logF,qsubF));
++ }
+> my_check<-function(file_path,FileList){
++         while(1==1){
++                 filelist_all=list.files(path=file_path,full.names=T);
++ 		tmp=is.element(FileList,filelist_all);
++                 if(all(tmp)){break;}
++ 		Sys.sleep(30);
++         }
++ }
+> ########	calculate the base feature set performance.
+> ROLL=0;
+> featF=inputF4;
+> qsubF=paste("./qsub/qsub_del",ROLL,sep=".");
+> logF= paste("./log/log_del",ROLL,sep=".");
+> perfF=paste("./perf/perf_del",ROLL,sep=".");
+> my_qsub(inputF1,inputF2,inputF3,featF,perfF,qsubF,logF);
+rm: cannot remove `./perf/perf_del.0': No such file or directory
+rm: cannot remove `./log/log_del.0': No such file or directory
+Your job 2167013 ("SBS_c") has been submitted
+> file_path="./perf";
+> my_check(file_path,perfF);
+> Sys.sleep(2);
+> tmp=as.vector(as.matrix(read.table(perfF,sep="\t",head=F)))
+> all.acc=tmp[1];
+> print(paste("base feature set's performance is: ",all.acc));
+[1] "base feature set's performance is:  0.924848942598187"
+> print("start deleting features............................");
+[1] "start deleting features............................"
+> best_performance=	all.acc;
+> baseFeat	=	as.vector(as.matrix(read.table(inputF4,sep="\t",head=F)));
+> 
+> 
+> RANK            =       read.table(inputF5,head=F,sep="\t");
+> RANK_groups     =       RANK[,2];
+> RANK_group      =       as.vector(unique(RANK_groups));
+> deleFeat	=       as.vector(RANK[,1]);
+> RANK_group_0	=	RANK_group;
+> 
+> for (ROLL in 1:length(RANK_group_0)){
++ 	bad_rank	=	c();
++ 	bad_feature	=	c();
++ 	BP		=	c();
++ 	FileList	=	c();
++ 	for (j in sort(RANK_group,decreasing=T)){
++ 		DeleFeat	=	deleFeat[which(RANK_groups==j)];
++ 		remain_features_tmp	=	setdiff(baseFeat,DeleFeat);
++ 		print(paste("deleting this feature now: ",paste(DeleFeat,collapse="  "),sep=""));
++ 		featF		=	paste("./feat/baseF",ROLL,j,sep=".");
++ 		qsubF		=	paste("./qsub/qsub_del",ROLL,j,sep=".");
++ 		logF		=	paste("./log/log_del",ROLL,j,sep=".");
++ 		perfF		=	paste("./perf/perf_del",ROLL,j,sep=".");
++ 		write.table(remain_features_tmp,file=featF,quote=F,sep="\t",col.name=F,row.name=F);
++ 		my_qsub(inputF1,inputF2,inputF3,featF,perfF,qsubF,logF);
++ 		FileList	=	c(FileList,perfF);
++ 	}
++ 	my_check(file_path,FileList);Sys.sleep(2);
++ 	for (j in sort(RANK_group,decreasing=T)){
++ 		perfF		=	paste("./perf/perf_del",ROLL,j,sep=".");
++ 		Perf		=	as.vector(as.matrix(read.table(perfF,head=F,sep="\t")));
++ 		MYPERFORMANCE	=	c(Perf[1]);
++ 		names(MYPERFORMANCE)	=	j;
++ 		print(paste("performance summary of three trial is: ",MYPERFORMANCE,sep=""));
++                 BP		=	c(BP,MYPERFORMANCE);
++ 	}
++         BPB	=	max(BP,na.rm=T);
++         if(best_performance<(BPB-delta)){
++ 		best_performance	=	BPB;
++                 bad_rank		=	sort(RANK_group,decreasing=T)[(which(BP==BPB)[1])];
++ 		bad_feature		=	deleFeat[which(RANK_groups==bad_rank)];
++         }
++         if (length(bad_feature)==0){
++                 print("no bad feature can be deleted, break here");break;
++         }else if(length(baseFeat)<=5){
++                 print("less than five features");break;
++         }else{
++                 print(paste("find the bad feature: ",paste(bad_feature,collapse="  "),sep=""));
++                 print(paste("the best performance is now: ",best_performance,sep=""));
++                 baseFeat		=	setdiff(baseFeat,bad_feature);
++ 		ID			=	which(!(is.element(RANK[,2],bad_rank)));
++ 		RANK			=	RANK[ID,];
++ 		RANK_groups		=	RANK[,2];
++ 		RANK_group		=	as.vector(unique(RANK_groups));
++ 		deleFeat		=	as.vector(RANK[,1]);
++                 print(paste("now the good features are:  ",paste(baseFeat,collapse="  "),sep=""));
++         }
++ }
+[1] "deleting this feature now: infernal.lo  infernal.up  infernal.dn"
+rm: cannot remove `./perf/perf_del.1.7': No such file or directory
+rm: cannot remove `./log/log_del.1.7': No such file or directory
+Your job 2167014 ("SBS_c") has been submitted
+[1] "deleting this feature now: gc.lo  gc.dn  gc.up"
+rm: cannot remove `./perf/perf_del.1.6': No such file or directory
+rm: cannot remove `./log/log_del.1.6': No such file or directory
+Your job 2167015 ("SBS_c") has been submitted
+[1] "deleting this feature now: nonpolya.lo  nonpolya.up  nonpolya.dn"
+rm: cannot remove `./perf/perf_del.1.5': No such file or directory
+rm: cannot remove `./log/log_del.1.5': No such file or directory
+Your job 2167016 ("SBS_c") has been submitted
+[1] "deleting this feature now: total.lo  total.dn  total.up"
+rm: cannot remove `./perf/perf_del.1.4': No such file or directory
+rm: cannot remove `./log/log_del.1.4': No such file or directory
+Your job 2167017 ("SBS_c") has been submitted
+[1] "deleting this feature now: smallrna.lo  smallrna.up  smallrna.dn"
+rm: cannot remove `./perf/perf_del.1.3': No such file or directory
+rm: cannot remove `./log/log_del.1.3': No such file or directory
+Your job 2167018 ("SBS_c") has been submitted
+[1] "deleting this feature now: blastx.lo  blastx.dn  blastx.up"
+rm: cannot remove `./perf/perf_del.1.2': No such file or directory
+rm: cannot remove `./log/log_del.1.2': No such file or directory
+Your job 2167019 ("SBS_c") has been submitted
+[1] "deleting this feature now: polya.lo  polya.up  polya.dn"
+rm: cannot remove `./perf/perf_del.1.1': No such file or directory
+rm: cannot remove `./log/log_del.1.1': No such file or directory
+Your job 2167020 ("SBS_c") has been submitted
+[1] "performance summary of three trial is: 0.922016616314199"
+[1] "performance summary of three trial is: 0.925037764350453"
+[1] "performance summary of three trial is: 0.923904833836858"
+[1] "performance summary of three trial is: 0.91559667673716"
+[1] "performance summary of three trial is: 0.928058912386707"
+[1] "performance summary of three trial is: 0.881986404833837"
+[1] "performance summary of three trial is: 0.911442598187311"
+[1] "find the bad feature: smallrna.lo  smallrna.up  smallrna.dn"
+[1] "the best performance is now: 0.928058912386707"
+[1] "now the good features are:  polya.lo  polya.up  polya.dn  blastx.lo  blastx.dn  blastx.up  total.lo  total.dn  total.up  nonpolya.lo  nonpolya.up  nonpolya.dn  gc.lo  gc.dn  gc.up  infernal.lo  infernal.up  infernal.dn"
+[1] "deleting this feature now: infernal.lo  infernal.up  infernal.dn"
+rm: cannot remove `./perf/perf_del.2.7': No such file or directory
+rm: cannot remove `./log/log_del.2.7': No such file or directory
+Your job 2167021 ("SBS_c") has been submitted
+[1] "deleting this feature now: gc.lo  gc.dn  gc.up"
+rm: cannot remove `./perf/perf_del.2.6': No such file or directory
+rm: cannot remove `./log/log_del.2.6': No such file or directory
+Your job 2167022 ("SBS_c") has been submitted
+[1] "deleting this feature now: nonpolya.lo  nonpolya.up  nonpolya.dn"
+rm: cannot remove `./perf/perf_del.2.5': No such file or directory
+rm: cannot remove `./log/log_del.2.5': No such file or directory
+Your job 2167023 ("SBS_c") has been submitted
+[1] "deleting this feature now: total.lo  total.dn  total.up"
+rm: cannot remove `./perf/perf_del.2.4': No such file or directory
+rm: cannot remove `./log/log_del.2.4': No such file or directory
+Your job 2167024 ("SBS_c") has been submitted
+[1] "deleting this feature now: blastx.lo  blastx.dn  blastx.up"
+rm: cannot remove `./perf/perf_del.2.2': No such file or directory
+rm: cannot remove `./log/log_del.2.2': No such file or directory
+Your job 2167025 ("SBS_c") has been submitted
+[1] "deleting this feature now: polya.lo  polya.up  polya.dn"
+rm: cannot remove `./perf/perf_del.2.1': No such file or directory
+rm: cannot remove `./log/log_del.2.1': No such file or directory
+Your job 2167026 ("SBS_c") has been submitted
+[1] "performance summary of three trial is: 0.920694864048338"
+[1] "performance summary of three trial is: 0.927492447129909"
+[1] "performance summary of three trial is: 0.928625377643505"
+[1] "performance summary of three trial is: 0.901812688821752"
+[1] "performance summary of three trial is: 0.879531722054381"
+[1] "performance summary of three trial is: 0.908043806646526"
+[1] "find the bad feature: nonpolya.lo  nonpolya.up  nonpolya.dn"
+[1] "the best performance is now: 0.928625377643505"
+[1] "now the good features are:  polya.lo  polya.up  polya.dn  blastx.lo  blastx.dn  blastx.up  total.lo  total.dn  total.up  gc.lo  gc.dn  gc.up  infernal.lo  infernal.up  infernal.dn"
+[1] "deleting this feature now: infernal.lo  infernal.up  infernal.dn"
+rm: cannot remove `./perf/perf_del.3.7': No such file or directory
+rm: cannot remove `./log/log_del.3.7': No such file or directory
+Your job 2167027 ("SBS_c") has been submitted
+[1] "deleting this feature now: gc.lo  gc.dn  gc.up"
+rm: cannot remove `./perf/perf_del.3.6': No such file or directory
+rm: cannot remove `./log/log_del.3.6': No such file or directory
+Your job 2167028 ("SBS_c") has been submitted
+[1] "deleting this feature now: total.lo  total.dn  total.up"
+rm: cannot remove `./perf/perf_del.3.4': No such file or directory
+rm: cannot remove `./log/log_del.3.4': No such file or directory
+Your job 2167029 ("SBS_c") has been submitted
+[1] "deleting this feature now: blastx.lo  blastx.dn  blastx.up"
+rm: cannot remove `./perf/perf_del.3.2': No such file or directory
+rm: cannot remove `./log/log_del.3.2': No such file or directory
+Your job 2167030 ("SBS_c") has been submitted
+[1] "deleting this feature now: polya.lo  polya.up  polya.dn"
+rm: cannot remove `./perf/perf_del.3.1': No such file or directory
+rm: cannot remove `./log/log_del.3.1': No such file or directory
+Your job 2167031 ("SBS_c") has been submitted
+[1] "performance summary of three trial is: 0.917673716012085"
+[1] "performance summary of three trial is: 0.925981873111782"
+[1] "performance summary of three trial is: 0.893882175226586"
+[1] "performance summary of three trial is: 0.869335347432024"
+[1] "performance summary of three trial is: 0.873300604229607"
+[1] "find the bad feature: gc.lo  gc.dn  gc.up"
+[1] "the best performance is now: 0.925981873111782"
+[1] "now the good features are:  polya.lo  polya.up  polya.dn  blastx.lo  blastx.dn  blastx.up  total.lo  total.dn  total.up  infernal.lo  infernal.up  infernal.dn"
+[1] "deleting this feature now: infernal.lo  infernal.up  infernal.dn"
+rm: cannot remove `./perf/perf_del.4.7': No such file or directory
+rm: cannot remove `./log/log_del.4.7': No such file or directory
+Your job 2167032 ("SBS_c") has been submitted
+[1] "deleting this feature now: total.lo  total.dn  total.up"
+rm: cannot remove `./perf/perf_del.4.4': No such file or directory
+rm: cannot remove `./log/log_del.4.4': No such file or directory
+Your job 2167033 ("SBS_c") has been submitted
+[1] "deleting this feature now: blastx.lo  blastx.dn  blastx.up"
+rm: cannot remove `./perf/perf_del.4.2': No such file or directory
+rm: cannot remove `./log/log_del.4.2': No such file or directory
+Your job 2167034 ("SBS_c") has been submitted
+[1] "deleting this feature now: polya.lo  polya.up  polya.dn"
+rm: cannot remove `./perf/perf_del.4.1': No such file or directory
+rm: cannot remove `./log/log_del.4.1': No such file or directory
+Your job 2167035 ("SBS_c") has been submitted
+[1] "performance summary of three trial is: 0.919373111782477"
+[1] "performance summary of three trial is: 0.889728096676737"
+[1] "performance summary of three trial is: 0.786631419939577"
+[1] "performance summary of three trial is: 0.867069486404834"
+[1] "find the bad feature: infernal.lo  infernal.up  infernal.dn"
+[1] "the best performance is now: 0.919373111782477"
+[1] "now the good features are:  polya.lo  polya.up  polya.dn  blastx.lo  blastx.dn  blastx.up  total.lo  total.dn  total.up"
+[1] "deleting this feature now: total.lo  total.dn  total.up"
+rm: cannot remove `./perf/perf_del.5.4': No such file or directory
+rm: cannot remove `./log/log_del.5.4': No such file or directory
+Your job 2167036 ("SBS_c") has been submitted
+[1] "deleting this feature now: blastx.lo  blastx.dn  blastx.up"
+rm: cannot remove `./perf/perf_del.5.2': No such file or directory
+rm: cannot remove `./log/log_del.5.2': No such file or directory
+Your job 2167037 ("SBS_c") has been submitted
+[1] "deleting this feature now: polya.lo  polya.up  polya.dn"
+rm: cannot remove `./perf/perf_del.5.1': No such file or directory
+rm: cannot remove `./log/log_del.5.1': No such file or directory
+Your job 2167038 ("SBS_c") has been submitted
+[1] "performance summary of three trial is: 0.832892749244713"
+[1] "performance summary of three trial is: 0.773413897280967"
+[1] "performance summary of three trial is: 0.849509063444109"
+[1] "no bad feature can be deleted, break here"
+> write.table(baseFeat,file=paste("./summary/bestFeat",sep="."),quote=F,col.name=F,row.name=F,sep="\t");
+> write.table(best_performance,file=paste("./summary/bestPerf",sep="."),quote=F,col.name=F,row.name=F,sep="\t")
+> 
+> rm(list=ls());
+> 
+> 
+> proc.time()
+   user  system elapsed 
+  0.879   0.623 403.903 

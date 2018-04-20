@@ -1,0 +1,17 @@
+########	this is the manual for clustering methods and generate correponding heatmaps
+####	set up the path variables;
+path0=/home/hulong/module/clustering/bin
+path1=/home/hulong/module/clustering/input
+path2=/home/hulong/module/clustering/output
+####	K-means clustering with k=3 or k=4; 
+##	It requires a matirx file: $path1/example.mx
+##	It requires a feature name file: $path1/example.FS
+##	It requires a user-defined parameter k: $k
+##	It outputs a matrix file with each sample assigned a clusterID in the first column: $path2/example.kmeans.$k.mx
+##	It outputs a heatmap showing how each clusters are like: $path2/example.kmeans.$k.pdf
+for k in $(seq 3 4);do echo $k;
+Rscript $path0/kmeans.R	$path1/example.mx	$path1/example.FS	$k	$path2/example.kmeans.$k.mx	$path2/example.kmeans.$k.pdf;
+done
+
+
+

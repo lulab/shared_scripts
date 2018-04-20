@@ -1,0 +1,12 @@
+
+# This script is used for pre-process genome gtf files
+prepare the genome annotation file as input, for human the inputs are:
+gencode.v19.annotation.gtf,gencode.v19.tRNAs.gtf,miRbase_hsa.gff3,gencode.v19.long_noncoding_RNAs.gtf et al
+
+you can use the input in /data1/users1/chaodi/ncRNA/human/gff/Gencode19/Input for testing !
+you will get these results:
+	1. separated specific biotypes 
+	2. seperated 5' and 3' UTR
+	3. defined intergenic region
+	4. cleaned gtf for cufflinks
+the output files are in	output: output_dir/separate_gff  output_dir/merge_gff   output_dir/clean_gtf/  

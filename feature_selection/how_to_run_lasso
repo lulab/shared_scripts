@@ -1,0 +1,19 @@
+########	this is the manual for feature selection methods
+####	set up the path variables;
+path0=/home/hulong/module/feature_selection/bin
+path1=/home/hulong/module/feature_selection/input
+path2=/home/hulong/module/feature_selection/output
+path3=/home/hulong/module/feature_selection/tmp
+####	lasso algorithm to perform regression and shrinkage
+##	It requires a matirx file: $path1/example.train.mx
+##	It requires a initial feature file: $path1/example.initial.FS;
+##	It outputs a matrix file with each element is a coeffiecent for each feature (row) on each class (column)
+
+/data/apps/R-2.15/bin/Rscript $path0/lasso.R	$path1/example.train.mx	$path1/example.initial.FS	$path3/foo;
+awk 'NR!=1&&$2!=0&&$3!=0&&$4!=0&&$5!=0{print $1}' $path3/foo	|grep -v "Intercept"	>	$path2/example.selected.FS.lasso
+rm -e -f $path3/foo;
+
+
+
+
+

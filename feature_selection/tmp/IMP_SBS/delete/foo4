@@ -1,0 +1,5 @@
+1	 0.924848942598187	smallrna.lo smallrna.up smallrna.dn
+2	0.928058912386707	nonpolya.lo nonpolya.up nonpolya.dn
+3	0.928625377643505	gc.lo gc.dn gc.up
+4	0.925981873111782	infernal.lo infernal.up infernal.dn
+5	0.919373111782477	polya.lo polya.up polya.dn blastx.lo blastx.dn blastx.up total.lo total.dn total.up

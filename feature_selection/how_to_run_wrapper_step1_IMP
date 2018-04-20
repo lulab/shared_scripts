@@ -1,0 +1,35 @@
+########	use randomForest importance to rank features then delete features in this order
+path0=/home/hulong/module/feature_selection/bin
+path1=/home/hulong/module/feature_selection/input
+path2=/home/hulong/module/feature_selection/output
+path3=/home/hulong/module/feature_selection/tmp
+cd $path3/IMP;
+mkdir  rank delete 
+
+########	IMP to rank
+Rscript $path0/cv.IMP.R		$path1/example.train.mx	$path3/idx/cv.idx	5	$path3/IMP/rank/IMP;
+########################################	delete multiple features per time.	
+########        rank features by importance and group them (up-stream, local and down-stream as one group and share one rank)
+awk 'NR>1{print $0}' $path3/IMP/rank/IMP	|sort -k6,6gr	|cut -f 1	|awk 'BEGIN{FS=".";OFS="\t"}{print $1,$0,NR}'	|sort -k1,1 -k3,3n	>	$path3/IMP/foo;
+awk 'BEGIN{OFS="\t";foo="";rank=0;foo1=""}{if(foo!=$1){if(foo!=""){print rank,foo1;}foo=$1;foo1=$2;rank=$3;}else{foo1=(foo1"\t"$2)}}END{print rank,foo1}' $path3/IMP/foo	|sort -k1,1n	>	$path3/IMP/foo1
+awk 'BEGIN{OFS="\t"}{for(i=2;i<=NF;i++){print $i,NR}}'	$path3/IMP/foo1		>	$path3/IMP/rank/rank;
+rm -e -f $path3/IMP/foo*
+########        delete
+cd $path3/IMP/delete;
+mkdir qsub log perf feat
+ echo " inputF1=\"$path1/example.train.mx\";
+ inputF2=\"$path3/idx/cv.idx\";
+ inputF3=\"5\";
+ inputF4=\"$path3/IMP/rank/rank\";" > $path3/IMP/delete/haha
+ cat $path3/IMP/delete/haha	$path0/Delete_by_rank_combine.R	>	$path3/IMP/delete/haha.R;
+ rm -e -f $path3/IMP/delete/haha
+ R CMD BATCH $path3/IMP/delete/haha.R
+
+########        summary selected features, select best+suboptimal performance as turnover point.
+ nvar=`awk 'NR>1{printf "%0.5f\t%d\n",$1,$2}' $path3/IMP/delete/perf_del_sum.txt|sort -k1,1gr -k2,2g|awk '{if(NR==1){max=$1}if($1>max-0.002){print $2}}'|sort -k1,1n|head -1`
+ echo $nvar;
+ head -n $nvar $path3/IMP/rank/rank	|cut -f 1	>	$path2/example.selected.FS.IMP;
+
+
+
+
