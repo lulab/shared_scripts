@@ -1,0 +1,16 @@
+Biological process	Fold enrichment	-log10(Pvalue)	col
+Small molecule metabolic process	1	16	1
+Single-organism catabolic process	1.5	12	1
+Oxoacid metabolic process	2	23	1
+Small molecule biosynthetic process	2.5	6	1
+Carboxylic acid metabolic process	2.7	24	1
+Organic acid metabolic process	2.7	25	1
+Monocarboxylic acid metabolic process	3	20	1
+Organonitrogen compound catabolic process	3.2	8	1
+Organic acid biosynthetic process	3.4	5	1
+Steroid metabolic process	3.5	14	1
+Small molecule catabolic process	3.8	18	1
+Alpha-amino acid metabolic process	4	10	1
+Carboxylic acid catabolic process	4.5	16	1
+Organic acid catabolic process	5.5	19	1
+Triglyceride metabolic process	6.75	15	1
