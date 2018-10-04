@@ -37,3 +37,16 @@ ggplot(df7) + geom_bar(stat="identity", width=0.6, aes(Term,Fold.Enrichment, fil
   theme(axis.text.y = element_text(size = 10,face="bold"),
         axis.text.x = element_text(size = 12,face="bold"))
 dev.off()
+
+pdf("1.4.Customized_boxplot3.pdf", height = 5, width = 10)
+ggplot(df7) + geom_bar(stat="identity", width=0.6, aes(Term,Fold.Enrichment, fill=-1*log10(PValue)),colour="#1d2a33") + 
+  coord_flip() +
+  scale_fill_gradient(low="#feff2b",high="#fe0100")+
+  labs(fill=expression(-log10_Pvalue), x="GO Terms",y="foldEnrichment", title="GO Biological Process") +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))  +
+  theme(axis.title.x =element_text(size=16), 
+        axis.title.y=element_text(size=14)) +
+  theme(axis.text.y = element_text(size = 10,face="bold"),
+        axis.text.x = element_text(size = 12,face="bold"))
+dev.off()
