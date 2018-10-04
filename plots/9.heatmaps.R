@@ -1,7 +1,11 @@
 ####9.Heatmaps
 df5 <-read.table("heatmaps.txt",header=T,sep="\t")
+# Covert data into matrix format
+# nrow(df5) and ncol(df5) return the number of rows and columns of matrix df5 respectively.
 dm <- data.matrix(df5[1:nrow(df5),2:ncol(df5)])
+# Get the row names
 row.names(dm) <- df5[,1]
+
 library(gplots)
 library(pheatmap)
 library(scales)
