@@ -18,7 +18,7 @@ introns_and_exons=introns+exons-genic
 #11.2 draw the plot
 install.packages("plotrix")
 library(plotrix)
-pdf("11.Customized_vennpieplot.pdf")
+pdf("11.Customized_vennpieplot.pdf", height=8, width=6)
 # parameter for pie chart
 iniR=0.2 # initial radius
 colors=list(NO='white',total='black',mtRNA='#e5f5e0',rRNA='#a1d99b',
